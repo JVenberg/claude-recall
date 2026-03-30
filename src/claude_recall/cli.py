@@ -18,7 +18,7 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from config import Config, load_config, save_config, set_config_value
+from claude_recall.config import Config, load_config, save_config, set_config_value
 
 console = Console()
 
@@ -37,7 +37,7 @@ def cli():
 @click.option("--create-indexes", is_flag=True, help="Create/rebuild search indexes after indexing.")
 def index(force, show_status, create_indexes):
     """Index Claude Code sessions for search."""
-    from indexer import Indexer
+    from claude_recall.indexer import Indexer
 
     indexer = Indexer()
 
@@ -117,7 +117,7 @@ def search(query, mode, limit, project, role, after, before, session, as_json, g
     Defaults to semantic (embedding-based) search. Use --exact, --fuzzy,
     or --hybrid for other modes.
     """
-    from searcher import Searcher, display_results, display_grouped_results
+    from claude_recall.searcher import Searcher, display_results, display_grouped_results
 
     searcher = Searcher()
     filters = {
@@ -157,7 +157,7 @@ def daemon():
 @click.option("--foreground", "-f", is_flag=True, help="Run in foreground (don't daemonize).")
 def daemon_start(foreground):
     """Start the background file watcher daemon."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
 
     mgr = DaemonManager()
     if mgr.is_running():
@@ -175,7 +175,7 @@ def daemon_start(foreground):
 @daemon.command("stop")
 def daemon_stop():
     """Stop the background daemon."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
 
     mgr = DaemonManager()
     if not mgr.is_running():
@@ -190,7 +190,7 @@ def daemon_stop():
 @daemon.command("status")
 def daemon_status():
     """Show daemon status."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
 
     mgr = DaemonManager()
     running = mgr.is_running()
@@ -218,7 +218,7 @@ def daemon_status():
 @daemon.command("enable")
 def daemon_enable():
     """Install launchd LaunchAgent for auto-start at login."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
 
     mgr = DaemonManager()
     mgr.enable()
@@ -228,7 +228,7 @@ def daemon_enable():
 @daemon.command("disable")
 def daemon_disable():
     """Remove launchd LaunchAgent."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
 
     mgr = DaemonManager()
     mgr.disable()
@@ -239,7 +239,7 @@ def daemon_disable():
 @daemon.command("install", hidden=True)
 def daemon_install():
     """Alias for enable."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
     DaemonManager().enable()
     console.print("[green]LaunchAgent installed.[/green]")
 
@@ -247,7 +247,7 @@ def daemon_install():
 @daemon.command("uninstall", hidden=True)
 def daemon_uninstall():
     """Alias for disable."""
-    from daemon import DaemonManager
+    from claude_recall.daemon import DaemonManager
     DaemonManager().disable()
     console.print("[green]LaunchAgent removed.[/green]")
 
@@ -290,7 +290,7 @@ def config_set(key, value):
 @cli.command()
 def stats():
     """Show index statistics."""
-    from indexer import Indexer
+    from claude_recall.indexer import Indexer
 
     indexer = Indexer()
     status = indexer.get_status()

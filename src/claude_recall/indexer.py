@@ -16,7 +16,7 @@ import tiktoken
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeRemainingColumn
 
-from config import Config, load_config
+from claude_recall.config import Config, load_config
 
 console = Console()
 

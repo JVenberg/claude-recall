@@ -6,48 +6,48 @@ description: >
   solved a problem, or reference past work across sessions.
 argument-hint: "[search query]"
 allowed-tools:
-  - Bash(uv run --directory ~/.claude/skills/claude-recall/scripts *)
+  - Bash(claude-recall *)
 ---
 
 # claude-recall
 
 Search your Claude Code session history with semantic, exact, fuzzy, or hybrid search.
 
+## Installation Check
+
+!`which claude-recall > /dev/null 2>&1 && echo "INSTALLED" || echo "NOT_INSTALLED: Run this to install: uv tool install git+https://github.com/JVenberg/claude-recall"`
+
+If the output above says NOT_INSTALLED, tell the user and run the install command before proceeding.
+
 ## Prerequisites
 
 - **Ollama** must be installed and running: `brew install ollama && ollama serve`
 - **Embedding model** must be pulled: `ollama pull nomic-embed-text`
+- **First index**: `claude-recall index` (takes a few minutes on first run)
 
 ## Quick Start
 
 ```bash
-# Index all sessions (first run takes a few minutes)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index
-
-# Semantic search (default, best for natural language queries)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "how did I fix the auth bug"
+# Semantic search (default)
+claude-recall search "how did I fix the auth bug"
 
 # Exact text search
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --exact "kubectl exec prod"
+claude-recall search --exact "kubectl exec prod"
 
 # Fuzzy search (tolerates typos)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --fuzzy "kubernetis deploy"
+claude-recall search --fuzzy "kubernetis deploy"
 
-# Hybrid search (combines semantic + keyword)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --hybrid "terraform state"
+# Hybrid search (semantic + keyword)
+claude-recall search --hybrid "terraform state"
 ```
 
 ## Indexing
 
 ```bash
-# Incremental index (only changed files)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index
-
-# Force full reindex
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index --force
-
-# Check index status
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index --status
+claude-recall index              # Incremental (only changed files)
+claude-recall index --force      # Force full reindex
+claude-recall index --status     # Check status (shows live progress if running)
+claude-recall stats              # Show index statistics
 ```
 
 ## Search Options
@@ -58,43 +58,35 @@ uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index --
 - `--after DATE`: Only results after this date
 - `--before DATE`: Only results before this date
 - `--session ID`: Search within a specific session
-- `--group-by project|session`: Group results into a ranked table by project or session (great for finding which session to resume)
+- `--group-by project|session`: Group results into a ranked table (great for finding which session to resume)
 - `--json`: Output as JSON
 
-### Grouped Search Examples
+### Grouped Search
 
 ```bash
-# Find which project has the most relevant sessions for a topic
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "auth bug" --limit 50 --group-by project
+# Find which project has the most relevant sessions
+claude-recall search "auth bug" --limit 50 --group-by project
 
 # Find which session to resume
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "kubernetes deploy" --limit 30 --group-by session
+claude-recall search "kubernetes deploy" --limit 30 --group-by session
 ```
 
 ## Daemon (Background Indexing)
 
 ```bash
-# Start/stop the file watcher
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon start
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon stop
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon status
-
-# Enable/disable auto-start at login
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon enable
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon disable
+claude-recall daemon start       # Start file watcher
+claude-recall daemon stop        # Stop daemon
+claude-recall daemon status      # Check status
+claude-recall daemon enable      # Auto-start at login (launchd)
+claude-recall daemon disable     # Remove auto-start
 ```
 
 ## Configuration
 
 ```bash
-# Show config
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config show
-
-# Change embedding model
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config set embedding_model nomic-embed-text-v2-moe
-
-# Change batch size
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config set batch_size 64
+claude-recall config show
+claude-recall config set embedding_model nomic-embed-text-v2-moe
+claude-recall config set batch_size 64
 ```
 
 ## When to Use

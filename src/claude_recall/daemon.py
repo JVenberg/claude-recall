@@ -13,7 +13,7 @@ from typing import Optional
 from watchdog.events import FileSystemEventHandler, FileModifiedEvent, FileCreatedEvent, FileDeletedEvent
 from watchdog.observers import Observer
 
-from config import Config, load_config
+from claude_recall.config import Config, load_config
 
 PLIST_NAME = "com.user.claude-recall"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{PLIST_NAME}.plist"
@@ -36,7 +36,7 @@ class DebounceHandler(FileSystemEventHandler):
 
         def do_reindex():
             try:
-                from indexer import Indexer
+                from claude_recall.indexer import Indexer
                 indexer = Indexer(self.config)
                 n = indexer.index_file(Path(file_path))
                 self.logger.info(f"Reindexed {file_path}: {n} vectors")
@@ -66,7 +66,7 @@ class DebounceHandler(FileSystemEventHandler):
             return
         self.logger.info(f"Deleted: {event.src_path}")
         try:
-            from indexer import Indexer
+            from claude_recall.indexer import Indexer
             indexer = Indexer(self.config)
             indexer.delete_file_index(event.src_path)
             self.logger.info(f"Removed index for {event.src_path}")
@@ -163,9 +163,8 @@ class DaemonManager:
         proc = subprocess.Popen(
             [
                 sys.executable, "-c",
-                "from daemon import DaemonManager; DaemonManager().run_foreground()"
+                "from claude_recall.daemon import DaemonManager; DaemonManager().run_foreground()"
             ],
-            cwd=str(SCRIPTS_DIR),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True,
@@ -193,10 +192,14 @@ class DaemonManager:
 
     def enable(self):
         """Install the launchd LaunchAgent."""
-        # Find uv path
-        uv_path = subprocess.run(
-            ["which", "uv"], capture_output=True, text=True
-        ).stdout.strip() or "/opt/homebrew/bin/uv"
+        # Find the claude-recall binary
+        recall_path = subprocess.run(
+            ["which", "claude-recall"], capture_output=True, text=True
+        ).stdout.strip()
+        if not recall_path:
+            from rich.console import Console
+            Console().print("[red]claude-recall not found on PATH. Install with: uv tool install claude-recall[/red]")
+            return
 
         plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -206,12 +209,7 @@ class DaemonManager:
     <string>{PLIST_NAME}</string>
     <key>ProgramArguments</key>
     <array>
-        <string>{uv_path}</string>
-        <string>run</string>
-        <string>--directory</string>
-        <string>{SCRIPTS_DIR}</string>
-        <string>python</string>
-        <string>cli.py</string>
+        <string>{recall_path}</string>
         <string>daemon</string>
         <string>start</string>
         <string>--foreground</string>

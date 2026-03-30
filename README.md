@@ -26,21 +26,25 @@ Uses [Ollama](https://ollama.com) for local embeddings and [LanceDB](https://lan
 ## Installation
 
 ```bash
-# 1. Clone into your Claude Code skills directory
-git clone https://github.com/JVenberg/claude-recall.git ~/.claude/skills/claude-recall
+# 1. Install as a CLI tool
+uv tool install git+https://github.com/JVenberg/claude-recall
 
-# 2. Install dependencies
-cd ~/.claude/skills/claude-recall/scripts
-uv sync
-
-# 3. Pull the embedding model
+# 2. Pull the embedding model
 ollama pull nomic-embed-text
 
-# 4. Index your sessions (first run takes a few minutes)
-uv run python cli.py index
+# 3. Index your sessions (first run takes a few minutes)
+claude-recall index
 ```
 
-The Claude Code skill is auto-discovered. You can use `/claude-recall <query>` or just ask Claude about past sessions.
+### As a Claude Code skill
+
+To also get the `/claude-recall` slash command and auto-invocation in Claude Code:
+
+```bash
+git clone https://github.com/JVenberg/claude-recall.git ~/.claude/skills/claude-recall
+```
+
+The skill auto-detects whether `claude-recall` is installed and prompts to install if not.
 
 ## Usage
 
@@ -48,26 +52,26 @@ The Claude Code skill is auto-discovered. You can use `/claude-recall <query>` o
 
 ```bash
 # Semantic search (default, best for natural language)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "how did I fix the auth bug"
+claude-recall search "how did I fix the auth bug"
 
 # Exact text match
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --exact "kubectl exec prod"
+claude-recall search --exact "kubectl exec prod"
 
 # Fuzzy search (tolerates typos)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --fuzzy "kubernetis deploy"
+claude-recall search --fuzzy "kubernetis deploy"
 
 # Hybrid (semantic + keyword)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search --hybrid "terraform state migration"
+claude-recall search --hybrid "terraform state migration"
 ```
 
 ### Group results to find the right session
 
 ```bash
 # Which project has the most relevant sessions?
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "splunk CLI" --limit 30 --group-by project
+claude-recall search "splunk CLI" --limit 30 --group-by project
 
 # Which session should I resume?
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py search "auth bug fix" --limit 20 --group-by session
+claude-recall search "auth bug fix" --limit 20 --group-by session
 ```
 
 Output includes a ranked table and copy-pasteable resume commands:
@@ -94,17 +98,10 @@ Resume commands:
 ### Indexing
 
 ```bash
-# Incremental index (only changed files)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index
-
-# Force full reindex
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index --force
-
-# Check index status (shows live progress if indexing is running)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py index --status
-
-# View stats
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py stats
+claude-recall index              # Incremental (only changed files)
+claude-recall index --force      # Force full reindex
+claude-recall index --status     # Check status (shows live progress if running)
+claude-recall stats              # Show index statistics
 ```
 
 ### Background daemon
@@ -112,30 +109,21 @@ uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py stats
 The daemon watches `~/.claude/projects/` for session file changes and auto-reindexes with a 5-second debounce. Uses macOS FSEvents (kernel-level, zero CPU when idle).
 
 ```bash
-# Start/stop
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon start
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon stop
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon status
+claude-recall daemon start       # Start file watcher
+claude-recall daemon stop        # Stop daemon
+claude-recall daemon status      # Check status
 
-# Auto-start at login (installs a launchd LaunchAgent)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon enable
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py daemon disable
+claude-recall daemon enable      # Auto-start at login (launchd LaunchAgent)
+claude-recall daemon disable     # Remove auto-start
 ```
 
 ### Configuration
 
 ```bash
-# Show config
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config show
-
-# Change embedding model
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config set embedding_model nomic-embed-text-v2-moe
-
-# Change batch size
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config set batch_size 64
-
-# Include agent sub-session files (skipped by default)
-uv run --directory ~/.claude/skills/claude-recall/scripts python cli.py config set skip_agent_files false
+claude-recall config show
+claude-recall config set embedding_model nomic-embed-text-v2-moe
+claude-recall config set batch_size 64
+claude-recall config set skip_agent_files false   # Include agent sub-sessions
 ```
 
 Config is stored in `~/.claude/claude-recall/config.json`.
@@ -154,21 +142,21 @@ Agent sub-session files (`agent-*`) are skipped by default since they duplicate 
 ## Architecture
 
 ```
-~/.claude/skills/claude-recall/
-  SKILL.md              # Claude Code skill definition
-  scripts/
-    cli.py              # Click CLI
-    indexer.py           # Parser, chunker, embedder, LanceDB writer
-    searcher.py          # Search modes + result display
-    daemon.py            # File watcher + launchd management
-    config.py            # Configuration
-    pyproject.toml       # Dependencies
+~/.claude/skills/claude-recall/    (if installed as a skill)
+  SKILL.md                         Claude Code skill definition
+  pyproject.toml                   Package metadata + dependencies
+  src/claude_recall/
+    cli.py                         Click CLI
+    indexer.py                     Parser, chunker, embedder, LanceDB writer
+    searcher.py                    Search modes + result display
+    daemon.py                      File watcher + launchd management
+    config.py                      Configuration
 
-~/.claude/claude-recall/
-    db/                  # LanceDB vector store (created on first index)
-    config.json          # User configuration
-    daemon.log           # Daemon logs
-    daemon.pid           # Daemon PID file
+~/.claude/claude-recall/           (created at runtime)
+    db/                            LanceDB vector store
+    config.json                    User configuration
+    daemon.log                     Daemon logs
+    daemon.pid                     Daemon PID file
 ```
 
 ## Supported embedding models

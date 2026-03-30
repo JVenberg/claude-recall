@@ -11,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.text import Text
 
-from config import Config, load_config
+from claude_recall.config import Config, load_config
 
 console = Console()
 
