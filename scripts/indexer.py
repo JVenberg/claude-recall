@@ -121,7 +121,7 @@ def parse_session_file(file_path: Path, config: Config) -> list[dict]:
     chunks = []
 
     # Derive project path from parent directory name
-    parent_dir = file_path.parent.name  # e.g., "-Users-jackvenberg-Code-myproject"
+    parent_dir = file_path.parent.name  # e.g., "-Users-username-Code-myproject"
     project_path = "/" + parent_dir.replace("-", "/")
 
     with open(file_path) as f:
