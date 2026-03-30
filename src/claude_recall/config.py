@@ -20,7 +20,7 @@ DEFAULTS = {
     "batch_size": 128,
     "max_chunk_tokens": 6000,
     "chunk_overlap_tokens": 512,
-    "debounce_seconds": 5,
+    "debounce_seconds": 600,
     "skip_agent_files": True,
 }
 
