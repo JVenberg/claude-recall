@@ -1,0 +1,19 @@
+[project]
+name = "claude-recall"
+version = "0.1.0"
+description = "Local semantic search for Claude Code sessions"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.0",
+    "lancedb>=0.20",
+    "ollama>=0.4",
+    "pyarrow>=15.0",
+    "rich>=13.0",
+    "watchdog>=4.0",
+    "rapidfuzz>=3.0",
+    "tiktoken>=0.7",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+claude-recall = "cli:cli"
